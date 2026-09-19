@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VoiceForge 6.1 | Ultra Realistic & Export</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #050507; --bg-panel: #0d0d12; --bg-surface: #15151e;
+      --border: #222230; --border-hover: #333348;
+      --accent: #00ffcc; --primary: #7000ff; --success: #00ff66; --danger: #ff0055;
+      --text-main: #f1f5f9; --text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 12px; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 3px; }
+
+    /* HEADER */
+    header { height: 50px; background: #000; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; flex-shrink: 0; }
+    .brand { font-weight: 900; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px;}
+    .brand-tag { background: linear-gradient(90deg, var(--primary), var(--accent)); padding: 3px 8px; border-radius: 4px; font-size: 9px; color: #000; font-weight: 900;}
+    .browser-warn { font-size: 11px; font-weight: 800; color: #ffbb00; display: flex; align-items: center; gap: 5px;}
+
+    /* LAYOUT */
+    .ide-layout { display: grid; grid-template-columns: 280px 1fr 300px; height: calc(100vh - 50px); }
+    .panel { background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+    .p-header { padding: 12px 16px; background: #08080a; border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .p-content { flex: 1; overflow-y: auto; padding: 15px; }
+
+    /* COL 1: VOICES */
+    .voice-grid { display: flex; flex-direction: column; gap: 8px; }
+    .voice-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px;}
+    .voice-card:hover { border-color: var(--primary); background: #1a1a26; }
+    .voice-card.active { border-color: var(--accent); background: rgba(0, 255, 204, 0.05); box-shadow: 0 0 15px rgba(0,255,204,0.1); }
+    .v-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-dark); display: flex; justify-content: center; align-items: center; font-size: 16px; border: 1px solid var(--border);}
+    .voice-card.active .v-icon { border-color: var(--accent); background: var(--accent); color: #000; }
+    .v-info { flex: 1; }
+    .v-name { font-weight: 800; font-size: 13px; color: #fff; margin-bottom: 2px;}
+    .v-desc { font-size: 10px; color: var(--text-muted); }
+
+    /* COL 2: EDITOR */
+    .editor-col { display: flex; flex-direction: column; background: var(--bg-dark); position: relative;}
+    .toolbar { padding: 10px 20px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center;}
+    .tb-btn { background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.1s;}
+    .tb-btn:hover { background: var(--border-hover); color: #fff;}
+    
+    textarea { flex: 1; background: transparent; border: none; color: #fff; font-size: 16px; line-height: 1.6; resize: none; outline: none; padding: 20px; }
+    
+    .visualizer-box { height: 160px; background: #000; border-top: 1px solid var(--border); position: relative; display: flex; flex-direction: column; justify-content: center;}
+    canvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0;}
+    
+    .playback-bar { position: absolute; bottom: 0; width: 100%; padding: 15px 20px; display: flex; justify-content: center; align-items: center; background: linear-gradient(0deg, rgba(0,0,0,0.95), transparent); z-index: 10; gap: 15px;}
+    
+    .play-btn { background: var(--success); color: #000; border: none; padding: 12px 30px; border-radius: 30px; font-size: 14px; font-weight: 900; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(0,255,102,0.3); transition: 0.2s; display: flex; align-items: center; gap: 8px;}
+    .play-btn:hover { transform: scale(1.05); }
+    .play-btn.playing { background: var(--danger); box-shadow: 0 0 20px rgba(255,0,85,0.4); }
+
+    /* COL 3: SETTINGS & EXPORT */
+    .prop-group { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px;}
+    .prop-label { font-size: 10px; font-weight: 800; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;}
+    .base-voice-name { font-size: 13px; font-weight: 900; color: #fff; margin-bottom: 5px; }
+    .base-voice-status { font-size: 10px; font-weight: 800; color: var(--success); margin-bottom: 15px; display: flex; align-items: center; gap: 5px;}
+    
+    .slider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 11px; font-weight: 600; color: #fff;}
+    .slider-val { font-family: 'JetBrains Mono'; color: var(--accent); }
+    input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 2px; outline: none; margin-bottom: 15px;}
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px var(--accent);}
+
+    .chunk-status { background: rgba(112, 0, 255, 0.1); border: 1px solid var(--primary); padding: 10px; border-radius: 8px; font-size: 11px; color: #fff; margin-bottom: 15px; display: none;}
+
+    /* EXPORT BUTTON */
+    .export-card { background: linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(112, 0, 255, 0.05)); border: 1px solid var(--accent); border-radius: 12px; padding: 20px; margin-bottom: 20px;}
+    .ec-title { font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 5px;}
+    .ec-desc { font-size: 10px; color: var(--text-muted); margin-bottom: 15px; line-height: 1.4;}
+    .btn-download { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 12px; cursor: pointer; width: 100%; text-transform: uppercase; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(0,255,204,0.3);}
+    .btn-download:hover { background: #00e6b8; transform: translateY(-2px);}
+
+    /* MODAL */
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(5px);}
+    .modal-box { background: var(--bg-panel); border: 1px solid var(--accent); padding: 30px; border-radius: 12px; text-align: center; max-width: 450px;}
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">🎙️ VoiceForge <span class="brand-tag">6.1 EXPORT ENGINE</span></div>
+    <div class="browser-warn">
+      ⚠️ Рекомендуется использовать Microsoft Edge
+    </div>
+  </header>
+
+  <div class="ide-layout">
+    
+    <!-- COL 1: 10 PERSONAS -->
+    <aside class="panel">
+      <div class="p-header">АКТЕРЫ ОЗВУЧКИ</div>
+      <div class="p-content" id="voicesContainer">
+        <!-- JS -->
+      </div>
+    </aside>
+
+    <!-- COL 2: EDITOR -->
+    <main class="editor-col">
+      <div class="toolbar">
+        <button class="tb-btn" onclick="loadText('rpg')">⚔️ Шаблон: Мебель</button>
+        <button class="tb-btn" onclick="loadText('story')">📖 Шаблон: История</button>
+        <div style="width:1px; height:20px; background:var(--border); margin:0 5px;"></div>
+        <button class="tb-btn" style="color:var(--danger);" onclick="document.getElementById('textEditor').value=''">Очистить</button>
+      </div>
+
+      <textarea id="textEditor" placeholder="Введите текст...">Паладин 40 уровня, эльф-лучник и гном-берсерк купили шкаф в ИКЕЕ. Паладин читает инструкцию как священный свиток. Гном пытается забить болты топором. А эльф просто стоит в стороне и говорит, что цвет шкафа не гармонирует с аурой комнаты!</textarea>
+
+      <div class="visualizer-box">
+        <canvas id="waveCanvas"></canvas>
+        <div class="playback-bar">
+          <button class="play-btn" id="mainPlayBtn" onclick="togglePlay(false)">
+            <span id="playIcon">▶</span> <span id="playText">ОЗВУЧИТЬ ТЕКСТ</span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- COL 3: SETTINGS & EXPORT -->
+    <aside class="panel" style="border-left: 1px solid var(--border); border-right: none;">
+      <div class="p-header">ФИНАЛИЗАЦИЯ И ЭКСПОРТ</div>
+      <div class="p-content">
+        
+        <div class="export-card">
+          <div class="ec-title">💾 СКАЧАТЬ АУДИО ФАЙЛ</div>
+          <div class="ec-desc">Программа запишет звук вкладки и конвертирует его в настоящий аудиофайл для ваших видео.</div>
+          <button class="btn-download" onclick="document.getElementById('recordModal').style.display='flex'">🔴 НАЧАТЬ ЗАПИСЬ (WEBM)</button>
+        </div>
+
+        <div class="chunk-status" id="chunkStatus">
+          ⏳ Читаю фрагмент: <span id="chunkNum" style="font-weight:900; color:var(--accent);">1</span> из <span id="chunkTotal" style="font-weight:900;">1</span>
+        </div>
+
+        <div class="prop-group">
+          <div class="prop-label">БАЗОВАЯ НЕЙРОСЕТЬ</div>
+          <div class="base-voice-name" id="baseVoiceName">Поиск голосов...</div>
+          <div class="base-voice-status" id="baseVoiceStatus">Ожидание движка ОС</div>
+        </div>
+
+        <div class="prop-group">
+          <div class="prop-label">ТОНКАЯ НАСТРОЙКА АКТЕРА</div>
+          
+          <div class="slider-row">
+            <span>Скорость (Speed)</span><span class="slider-val" id="valSpeed">1.0x</span>
+          </div>
+          <input type="range" id="slSpeed" min="0.7" max="1.5" step="0.05" value="1" oninput="updateSliders()">
+
+          <div class="slider-row">
+            <span>Тембр (Pitch)</span><span class="slider-val" id="valPitch">1.0</span>
+          </div>
+          <input type="range" id="slPitch" min="0.5" max="1.5" step="0.05" value="1" oninput="updateSliders()">
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- МОДАЛКА ЗАПИСИ (СКАЧИВАНИЯ) -->
+  <div class="modal-overlay" id="recordModal">
+    <div class="modal-box">
+      <div style="font-size:20px; font-weight:900; color:var(--accent); margin-bottom:15px;">ИНСТРУКЦИЯ ПО СКАЧИВАНИЮ</div>
+      <div style="font-size:12px; color:var(--text-main); margin-bottom:20px; line-height:1.5; text-align:left;">
+        Так как ОС блокирует прямую отдачу файла, мы запишем звук с экрана!<br><br>
+        1. В появившемся окне выберите <b>«Вкладка Chrome / Edge»</b>.<br>
+        2. Обязательно включите <b>«Предоставить доступ к аудио»</b>.<br>
+        3. Нажмите «Поделиться». Звук проиграется и автоматически скачается!
+      </div>
+      <button class="btn-download" onclick="executeRecording()">ПОНЯТНО, НАЧАТЬ ЗАПИСЬ</button>
+      <button class="tb-btn" style="margin-top:10px; width:100%; border:none; background:transparent;" onclick="document.getElementById('recordModal').style.display='none'">Отмена</button>
+    </div>
+  </div>
+
+  <script>
+    const personas = [
+      { id: 'alena', name: 'Алёна (Рассказчица)', icon: '👩', desc: 'Мягкий и спокойный тон', pitch: 1.15, rate: 0.95 },
+      { id: 'stas', name: 'Стас (Диктор)', icon: '🧔', desc: 'Четкий, уверенный, басистый', pitch: 0.8, rate: 0.95 },
+      { id: 'timur', name: 'Тимур (Shorts/TikTok)', icon: '👱', desc: 'Динамичный и энергичный', pitch: 1.05, rate: 1.15 },
+      { id: 'anna', name: 'Анна (Деловая)', icon: '👩‍💼', desc: 'Строгий информационный тон', pitch: 0.95, rate: 1.05 },
+      { id: 'dima', name: 'Дмитрий (Эпичный)', icon: '🎙️', desc: 'Трейлерный голос (низкий)', pitch: 0.65, rate: 0.9 },
+      { id: 'sofia', name: 'София (Аудиокниги)', icon: '🧚', desc: 'Плавный, теплый тембр', pitch: 1.25, rate: 0.9 },
+      { id: 'max', name: 'Максим (Реклама)', icon: '⚡', desc: 'Громкий, рекламный', pitch: 1.0, rate: 1.2 },
+      { id: 'alisa', name: 'Алиса (Помощник)', icon: '🤖', desc: 'Четкий цифровой тон', pitch: 1.0, rate: 1.0 },
+      { id: 'egor', name: 'Егор (Подкаст)', icon: '🎧', desc: 'Глубокий разговорный голос', pitch: 0.75, rate: 0.95 },
+      { id: 'kira', name: 'Кира (Молодежная)', icon: '🛹', desc: 'Быстрый темп, высокий голос', pitch: 1.15, rate: 1.25 }
+    ];
+
+    let currentPersona = personas[0];
+    const voicesContainer = document.getElementById('voicesContainer');
+
+    personas.forEach((p, index) => {
+      const card = document.createElement('div');
+      card.className = `voice-card ${index === 0 ? 'active' : ''}`;
+      card.innerHTML = `<div class="v-icon">${p.icon}</div><div class="v-info"><div class="v-name">${p.name}</div><div class="v-desc">${p.desc}</div></div>`;
+      card.onclick = () => {
+        document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        currentPersona = p;
+        document.getElementById('slSpeed').value = p.rate;
+        document.getElementById('slPitch').value = p.pitch;
+        updateSliders();
+      };
+      voicesContainer.appendChild(card);
+    });
+
+    function updateSliders() {
+      document.getElementById('valSpeed').textContent = document.getElementById('slSpeed').value + 'x';
+      document.getElementById('valPitch').textContent = document.getElementById('slPitch').value;
+      if (isPlaying) { stopAudio(); togglePlay(isRecordingMode); }
+    }
+
+    const synth = window.speechSynthesis;
+    let optimalVoice = null;
+    let isPlaying = false;
+    let isRecordingMode = false;
+    let chunkQueue = [];
+
+    function initVoices() {
+      const allVoices = synth.getVoices();
+      const ruVoices = allVoices.filter(v => v.lang.includes('ru'));
+      optimalVoice = ruVoices.find(v => v.name.includes('Natural') || v.name.includes('Online')) || 
+                     ruVoices.find(v => v.name.includes('Google')) || 
+                     ruVoices[0];
+      if (optimalVoice) {
+        document.getElementById('baseVoiceName').textContent = optimalVoice.name;
+        if (optimalVoice.name.includes('Natural') || optimalVoice.name.includes('Online') || optimalVoice.name.includes('Google')) {
+          document.getElementById('baseVoiceStatus').innerHTML = `🟢 Нейросетевой движок активен`;
+          document.getElementById('baseVoiceStatus').style.color = 'var(--success)';
+        }
+      }
+    }
+    initVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = initVoices;
+
+    function chunkText(text) {
+      const chunks = text.match(/[^.?!;\n]+[.?!;\n]+/g) || [text];
+      return chunks.map(c => c.trim()).filter(c => c.length > 0);
+    }
+
+    const playBtn = document.getElementById('mainPlayBtn');
+    const playIcon = document.getElementById('playIcon');
+    const playText = document.getElementById('playText');
+    const textEditor = document.getElementById('textEditor');
+    const chunkStatus = document.getElementById('chunkStatus');
+
+    function stopAudio() {
+      synth.cancel();
+      isPlaying = false;
+      chunkQueue = [];
+      playBtn.classList.remove('playing');
+      playIcon.textContent = '▶';
+      playText.textContent = 'ОЗВУЧИТЬ ТЕКСТ';
+      chunkStatus.style.display = 'none';
+      if(isRecordingMode && mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      isRecordingMode = false;
+    }
+
+    function playNextChunk() {
+      if (chunkQueue.length === 0) {
+        if(isRecordingMode && mediaRecorder) mediaRecorder.stop(); // Завершаем запись
+        stopAudio();
+        return;
+      }
+
+      const currentText = chunkQueue.shift();
+      const total = parseInt(document.getElementById('chunkTotal').textContent);
+      document.getElementById('chunkNum').textContent = total - chunkQueue.length;
+
+      const utterance = new SpeechSynthesisUtterance(currentText);
+      if (optimalVoice) utterance.voice = optimalVoice;
+      utterance.rate = document.getElementById('slSpeed').value;
+      utterance.pitch = document.getElementById('slPitch').value;
+
+      utterance.onend = () => { setTimeout(playNextChunk, 200); };
+      utterance.onerror = (e) => { console.error(e); playNextChunk(); };
+
+      synth.speak(utterance);
+    }
+
+    function togglePlay(recording = false) {
+      if (isPlaying && !recording) {
+        stopAudio();
+        return;
+      }
+
+      const fullText = textEditor.value.trim();
+      if (fullText === '') return alert("Введите текст!");
+
+      synth.cancel(); 
+      chunkQueue = chunkText(fullText);
+      
+      if(chunkQueue.length > 0) {
+        isPlaying = true;
+        isRecordingMode = recording;
+        playBtn.classList.add('playing');
+        playIcon.textContent = '⏹';
+        playText.textContent = recording ? 'ИДЕТ ЗАПИСЬ...' : 'ОСТАНОВИТЬ';
+        
+        chunkStatus.style.display = 'block';
+        document.getElementById('chunkTotal').textContent = chunkQueue.length;
+        
+        playNextChunk();
+      }
+    }
+
+    function loadText(type) {
+      if(type === 'rpg') textEditor.value = "Паладин 40 уровня, эльф-лучник и гном-берсерк купили шкаф в ИКЕЕ. Паладин читает инструкцию как священный свиток. Гном пытается забить болты топором. А эльф просто стоит в стороне и говорит, что цвет шкафа не гармонирует с аурой комнаты.";
+      if(type === 'story') textEditor.value = "Эта история началась далеко на севере. Там, где зимы длятся по восемь месяцев, а солнце лишь изредка касается верхушек сосен. Главный герой, молодой парень по имени Алекс, даже не подозревал, что этот день изменит его жизнь навсегда.";
+    }
+
+    // --- CANVAS ВИЗУАЛИЗАТОР ---
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    let frame = 0;
+    function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+    window.addEventListener('resize', resize); resize();
+    function drawWave() {
+      frame++; ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const bars = 45; const barW = canvas.width / bars - 3; const cy = canvas.height / 2;
+      for (let i = 0; i < bars; i++) {
+        let h = 2;
+        if (isPlaying) {
+          const wave = Math.sin(frame*0.15 + i*0.2)*20 + Math.cos(frame*0.1 + i*0.1)*15;
+          const bell = Math.sin((i/bars) * Math.PI); 
+          h = Math.abs((wave) * bell * 2) + 5;
+        }
+        const x = i * (barW + 3);
+        const grd = ctx.createLinearGradient(0, cy - h, 0, cy + h);
+        grd.addColorStop(0, '#00ffcc'); grd.addColorStop(0.5, '#7000ff'); grd.addColorStop(1, '#ff0055');
+        ctx.fillStyle = grd; ctx.beginPath(); ctx.roundRect(x, cy - h/2, barW, h, 3); ctx.fill();
+      }
+      requestAnimationFrame(drawWave);
+    }
+    drawWave();
+
+    // --- СКАЧИВАНИЕ ФАЙЛА ---
+    let mediaRecorder;
+    let audioChunks = [];
+
+    async function executeRecording() {
+      document.getElementById('recordModal').style.display = 'none';
+      stopAudio(); 
+
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        if (stream.getAudioTracks().length === 0) {
+          alert("ОШИБКА: Вы не включили 'Предоставить доступ к аудио'!");
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        const audioStream = new MediaStream(stream.getAudioTracks());
+        mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
+        
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `VoiceForge_${currentPersona.name}_${Date.now()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          stream.getTracks().forEach(t => t.stop()); 
+          alert("✅ Аудиофайл успешно скачан!");
+        };
+
+        mediaRecorder.start();
+        togglePlay(true); // Запускаем воспроизведение в режиме записи
+
+      } catch (err) {
+        console.error(err);
+        alert("Запись отменена или не поддерживается вашим устройством.");
+      }
+    }
+  </script>
+</body>
+</html>
